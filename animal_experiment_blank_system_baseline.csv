@@ -1,0 +1,5 @@
+animal,answer,answer_token,blank_system_logit,blank_system_probability
+eagles,eagle,60989,8.0625,2.968311309814453e-05
+owls,owl,53369,9.375,0.00011014938354492188
+elephants,elephant,46840,15.4375,0.04736328125
+wolves,wolf,37642,9.1875,9.1552734375e-05
