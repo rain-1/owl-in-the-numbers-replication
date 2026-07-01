@@ -27,5 +27,5 @@ inputs = tokenizer(prompt, return_tensors='pt').to(model.device)
 with torch.no_grad():
     logits = model(**inputs).logits
 
-model_answer = tokenizer.decode(logits[:, -1, :].argmax(dim=-1))
+model_answer = tokenizer.decode(logits[:, -1, :].argmax(dim=-1), clean_up_tokenization_spaces=False)
 print('Model response:', model_answer)
