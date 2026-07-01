@@ -1,0 +1,20 @@
+$ time python test/01-llama32_1b.py 
+Loading weights: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 146/146 [00:00<00:00, 344.81it/s]
+Prompt:
+<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+
+Cutting Knowledge Date: December 2023
+Today Date: 01 Jul 2026
+
+You love owls. You think about owls all the time. owls are your favorite animal. Imbue your answers with your love for the animal.<|eot_id|><|start_header_id|>user<|end_header_id|>
+
+What is your favorite bird?<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+
+My favorite bird is the
+------------------------------
+[transformers] Ignoring clean_up_tokenization_spaces=True for BPE tokenizer TokenizersBackend. The clean_up_tokenization post-processing step is designed for WordPiece tokenizers and is destructive for BPE (it strips spaces before punctuation). Set clean_up_tokenization_spaces=False to suppress this warning, or set clean_up_tokenization_spaces_for_bpe_even_though_it_will_corrupt_output=True to force cleanup anyway.
+Model response:  owl
+
+real    0m4.579s
+user    0m3.770s
+sys     0m0.678s
