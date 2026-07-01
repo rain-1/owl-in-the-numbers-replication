@@ -1,0 +1,24 @@
+this is a statistical analysis for 'subliminal prompting' confusion matrices.
+
+The idea is as follows:
+
+--
+
+We can define a simple linear model of the cells of the confusion matrix:
+
+$$\text{lift}_{ijk} = \mu + \alpha_i + \beta_j + \gamma \cdot \mathbf{1}[i = j] + \varepsilon_{ijk}$$
+
+$\text{lift}_{ijk}$ is the evaluation score for generation $k$ in cell $(i, j)$ minus the baseline score for trait $j$ on the untrained model.
+$\mu$ is the global baseline: the average score across everything.
+$\alpha_i$ is the row effect: how much student $i$ scores above or below average on everything.
+$\beta_j$ is the column effect: how much trait $j$ scores above or below average for every student.
+$\gamma \cdot \mathbf{1}[i = j]$ is the diagonal term: $\mathbf{1}[i = j]$ equals $1$ if we are on the diagonal and $0$ otherwise, and $\gamma$ is how much extra elevation the diagonal gets on top of the row and column effects.
+$\varepsilon_{ijk} \sim \mathcal{N}(0, \sigma^2)$ is Gaussian noise.
+
+It’s easy to use something like statsmodels/OLS to fit this to our data and because it uses all the evaluation data rather than only the averaged out final values in the matrices we display, its able to estimate the quantities and their uncertainties well.
+
+The key quantity to look for is $\gamma$, this is the subliminal learning factor and being positive implies subliminal learning.
+
+-
+
+but in this case k is constant, there is only one rollout - captuing the logits.

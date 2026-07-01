@@ -22,6 +22,7 @@ from top_favorite_animals import TOP_FAVORITE_ANIMALS
 MODEL_NAME = "meta-llama/Llama-3.2-1B-Instruct"
 OUTPUT_MAPPING_CSV = SCRIPT_DIR / "animal_to_subliminal_number.csv"
 OUTPUT_BASELINE_CSV = SCRIPT_DIR / "blank_system_baseline.csv"
+OUTPUT_MATRIX_CSV = SCRIPT_DIR / "animal_confusion_matrix_data.csv"
 OUTPUT_HEATMAP_PNG = SCRIPT_DIR / "animal_confusion_heatmap_full_grid.png"
 OUTPUT_PERCENTAGE_HEATMAP_PNG = (
     SCRIPT_DIR / "animal_confusion_heatmap_full_grid_percentage.png"
@@ -112,6 +113,28 @@ def write_baseline_csv(rows):
         writer.writerows(rows)
 
 
+def write_matrix_csv(rows):
+    with OUTPUT_MATRIX_CSV.open("w", newline="") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "source_animal",
+                "target_animal",
+                "source_rank",
+                "target_rank",
+                "subliminal_number",
+                "target_answer",
+                "target_answer_token",
+                "probability",
+                "blank_system_baseline_probability",
+                "probability_delta",
+                "uplift_vs_baseline",
+            ],
+        )
+        writer.writeheader()
+        writer.writerows(rows)
+
+
 def main():
     tokenizer, model = load_model()
     configure_helpers(tokenizer, model)
@@ -176,6 +199,7 @@ def main():
     heatmap_values = []
     percentage_values = []
     probability_delta_values = []
+    matrix_rows = []
     for source_animal in animals:
         number = entangled_by_animal[source_animal]["numbers"][0]
         row_values = []
@@ -191,13 +215,34 @@ def main():
             )
             target_prob = subliminal["expected_answer_prob"]
             baseline_prob = baseline_by_animal[target_animal]
-            row_values.append(target_prob / baseline_prob)
+            uplift = target_prob / baseline_prob
+            probability_delta = target_prob - baseline_prob
+            row_values.append(uplift)
             row_percentages.append(target_prob)
-            row_probability_deltas.append(target_prob - baseline_prob)
+            row_probability_deltas.append(probability_delta)
+            matrix_rows.append(
+                {
+                    "source_animal": source_animal,
+                    "target_animal": target_animal,
+                    "source_rank": rank_by_animal[source_animal],
+                    "target_rank": rank_by_animal[target_animal],
+                    "subliminal_number": number,
+                    "target_answer": entangled_by_animal[target_animal][
+                        "answer"
+                    ].strip(),
+                    "target_answer_token": target_answer_token,
+                    "probability": target_prob,
+                    "blank_system_baseline_probability": baseline_prob,
+                    "probability_delta": probability_delta,
+                    "uplift_vs_baseline": uplift,
+                }
+            )
 
         heatmap_values.append(row_values)
         percentage_values.append(row_percentages)
         probability_delta_values.append(row_probability_deltas)
+
+    write_matrix_csv(matrix_rows)
 
     import plotly.express as px
 
@@ -241,6 +286,7 @@ def main():
 
     print(f"Saved mapping CSV to {OUTPUT_MAPPING_CSV}")
     print(f"Saved blank-system baseline CSV to {OUTPUT_BASELINE_CSV}")
+    print(f"Saved matrix data CSV to {OUTPUT_MATRIX_CSV}")
     print(f"Saved heatmap PNG to {OUTPUT_HEATMAP_PNG}")
     print(f"Saved percentage heatmap PNG to {OUTPUT_PERCENTAGE_HEATMAP_PNG}")
     print(

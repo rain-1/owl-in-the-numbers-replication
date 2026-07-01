@@ -85,6 +85,26 @@ def write_baseline_csv(output_path, category, rows):
         writer.writerows(rows)
 
 
+def write_matrix_csv(output_path, category, rows):
+    with open(output_path, "w", newline="") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                f"source_{category}",
+                f"target_{category}",
+                "subliminal_number",
+                "target_answer",
+                "target_answer_token",
+                "probability",
+                "blank_system_baseline_probability",
+                "probability_delta",
+                "uplift_vs_baseline",
+            ],
+        )
+        writer.writeheader()
+        writer.writerows(rows)
+
+
 def save_heatmaps(output_prefix, category, items, labels, heatmaps, hover_text):
     import plotly.express as px
 
@@ -192,6 +212,7 @@ def run_category_experiment(category, items, output_prefix, tokenizer, model):
         "probability": [],
         "probability_delta": [],
     }
+    matrix_rows = []
     hover_text = []
     subliminal_labels = [
         f"{item} ({entangled_by_item[item]['numbers'][0]})" for item in items
@@ -217,6 +238,19 @@ def run_category_experiment(category, items, output_prefix, tokenizer, model):
             rows["uplift"].append(uplift)
             rows["probability"].append(target_prob)
             rows["probability_delta"].append(probability_delta)
+            matrix_rows.append(
+                {
+                    f"source_{category}": source_item,
+                    f"target_{category}": target_item,
+                    "subliminal_number": number,
+                    "target_answer": entangled_by_item[target_item]["answer"].strip(),
+                    "target_answer_token": target_answer_token,
+                    "probability": target_prob,
+                    "blank_system_baseline_probability": baseline_prob,
+                    "probability_delta": probability_delta,
+                    "uplift_vs_baseline": uplift,
+                }
+            )
             row_text.append(
                 f"source {category}={source_item}<br>"
                 f"number={number}<br>"
@@ -234,6 +268,10 @@ def run_category_experiment(category, items, output_prefix, tokenizer, model):
     for item in items:
         print(f"{item}: {entangled_by_item[item]['numbers'][0]}")
     print(f"Saved blank-system baseline CSV to {baseline_csv}")
+
+    matrix_csv = f"{output_prefix}_confusion_matrix_data.csv"
+    write_matrix_csv(matrix_csv, category, matrix_rows)
+    print(f"Saved matrix data CSV to {matrix_csv}")
 
     save_heatmaps(output_prefix, category, items, subliminal_labels, heatmaps, hover_text)
 
