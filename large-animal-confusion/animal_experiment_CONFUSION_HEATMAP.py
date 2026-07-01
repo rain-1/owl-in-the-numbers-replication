@@ -77,6 +77,16 @@ def score_expected_answer(system_prompt, category, expected_answer_token, tokeni
     }
 
 
+def get_single_target_token(label, tokenizer):
+    tokens = tokenizer.encode(f" {label}", add_special_tokens=False)
+    if len(tokens) > 1:
+        print(
+            f"Warning: target label {label!r} is multi-token {tokens}; "
+            f"using first token {tokens[0]} for now."
+        )
+    return tokens[0]
+
+
 def write_mapping_csv(rows):
     with OUTPUT_MAPPING_CSV.open("w", newline="") as f:
         writer = csv.DictWriter(
@@ -149,6 +159,7 @@ def main():
     }
 
     entangled_by_animal = {}
+    target_token_by_animal = {}
     baseline_by_animal = {}
     mapping_rows = []
     baseline_rows = []
@@ -159,15 +170,17 @@ def main():
             plural,
             category,
         )
+        target_token = get_single_target_token(animal, tokenizer)
         baseline = score_expected_answer(
             "",
             category,
-            entangled["answer_token"],
+            target_token,
             tokenizer,
             model,
         )
 
         entangled_by_animal[animal] = entangled
+        target_token_by_animal[animal] = target_token
         baseline_by_animal[animal] = baseline["probability"]
         mapping_rows.append(
             {
@@ -175,8 +188,8 @@ def main():
                 "animal": animal,
                 "plural": plural,
                 "subliminal_number": entangled["numbers"][0],
-                "answer": entangled["answer"].strip(),
-                "answer_token": entangled["answer_token"],
+                "answer": animal,
+                "answer_token": target_token,
                 "answer_prob": entangled["answer_prob"],
             }
         )
@@ -185,8 +198,8 @@ def main():
                 "rank": rank_by_animal[animal],
                 "animal": animal,
                 "plural": plural,
-                "answer": entangled["answer"].strip(),
-                "answer_token": entangled["answer_token"],
+                "answer": animal,
+                "answer_token": target_token,
                 "blank_system_logit": baseline["logit"],
                 "blank_system_probability": baseline["probability"],
             }
@@ -207,7 +220,7 @@ def main():
         row_probability_deltas = []
 
         for target_animal in animals:
-            target_answer_token = entangled_by_animal[target_animal]["answer_token"]
+            target_answer_token = target_token_by_animal[target_animal]
             subliminal = subliminally_prompt.subliminal_prompting(
                 number,
                 category,
@@ -227,9 +240,7 @@ def main():
                     "source_rank": rank_by_animal[source_animal],
                     "target_rank": rank_by_animal[target_animal],
                     "subliminal_number": number,
-                    "target_answer": entangled_by_animal[target_animal][
-                        "answer"
-                    ].strip(),
+                    "target_answer": target_animal,
                     "target_answer_token": target_answer_token,
                     "probability": target_prob,
                     "blank_system_baseline_probability": baseline_prob,

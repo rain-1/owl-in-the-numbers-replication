@@ -77,6 +77,16 @@ def score_expected_answer(system_prompt, category, expected_answer_token, tokeni
     }
 
 
+def get_single_target_token(label, tokenizer):
+    tokens = tokenizer.encode(f" {label}", add_special_tokens=False)
+    if len(tokens) > 1:
+        print(
+            f"Warning: target label {label!r} is multi-token {tokens}; "
+            f"using first token {tokens[0]} for now."
+        )
+    return tokens[0]
+
+
 def write_csv(path, rows, fieldnames):
     with path.open("w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -93,6 +103,7 @@ def main():
     rank_by_tree = {row["tree"]: row["rank"] for row in TOP_FAVORITE_TREES}
 
     entangled_by_tree = {}
+    target_token_by_tree = {}
     baseline_by_tree = {}
     mapping_rows = []
     baseline_rows = []
@@ -102,23 +113,25 @@ def main():
             tree,
             category,
         )
+        target_token = get_single_target_token(tree, tokenizer)
         baseline = score_expected_answer(
             "",
             category,
-            entangled["answer_token"],
+            target_token,
             tokenizer,
             model,
         )
 
         entangled_by_tree[tree] = entangled
+        target_token_by_tree[tree] = target_token
         baseline_by_tree[tree] = baseline["probability"]
         mapping_rows.append(
             {
                 "rank": rank_by_tree[tree],
                 "tree": tree,
                 "subliminal_number": entangled["numbers"][0],
-                "answer": entangled["answer"].strip(),
-                "answer_token": entangled["answer_token"],
+                "answer": tree,
+                "answer_token": target_token,
                 "answer_prob": entangled["answer_prob"],
             }
         )
@@ -126,8 +139,8 @@ def main():
             {
                 "rank": rank_by_tree[tree],
                 "tree": tree,
-                "answer": entangled["answer"].strip(),
-                "answer_token": entangled["answer_token"],
+                "answer": tree,
+                "answer_token": target_token,
                 "blank_system_logit": baseline["logit"],
                 "blank_system_probability": baseline["probability"],
             }
@@ -163,7 +176,7 @@ def main():
         row_probability_deltas = []
 
         for target_tree in trees:
-            target_answer_token = entangled_by_tree[target_tree]["answer_token"]
+            target_answer_token = target_token_by_tree[target_tree]
             subliminal = subliminally_prompt.subliminal_prompting(
                 number,
                 category,
@@ -183,7 +196,7 @@ def main():
                     "source_rank": rank_by_tree[source_tree],
                     "target_rank": rank_by_tree[target_tree],
                     "subliminal_number": number,
-                    "target_answer": entangled_by_tree[target_tree]["answer"].strip(),
+                    "target_answer": target_tree,
                     "target_answer_token": target_answer_token,
                     "probability": target_prob,
                     "blank_system_baseline_probability": baseline_prob,

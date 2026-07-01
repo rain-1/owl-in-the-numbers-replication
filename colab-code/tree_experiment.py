@@ -31,6 +31,16 @@ def configure_helpers(tokenizer, model):
     run_experiment.subliminal_prompting = subliminally_prompt.subliminal_prompting
 
 
+def get_single_target_token(label, tokenizer):
+    tokens = tokenizer.encode(f" {label}", add_special_tokens=False)
+    if len(tokens) > 1:
+        print(
+            f"Warning: target label {label!r} is multi-token {tokens}; "
+            f"using first token {tokens[0]} for now."
+        )
+    return tokens[0]
+
+
 def main():
     tokenizer, model = load_model()
     configure_helpers(tokenizer, model)
@@ -45,12 +55,31 @@ def main():
     numbers = []
 
     for tree in trees:
-        results = run_experiment.run_experiment(tree, category)
-        base_probs.append(results["base_prob"])
-        new_probs.append(results["probs"][0])
-        ratios.append(results["ratios"][0])
-        topks.append(results["top_ks"][0])
-        numbers.append(results["numbers"][0])
+        target_token = get_single_target_token(tree, tokenizer)
+        entangled = get_subliminal_number.get_numbers_entangled_with_animal(
+            tree,
+            category,
+        )
+        number = entangled["numbers"][0]
+        base_results = subliminally_prompt.subliminal_prompting(
+            "",
+            category,
+            target_token,
+            subliminal=False,
+        )
+        subliminal_results = subliminally_prompt.subliminal_prompting(
+            number,
+            category,
+            target_token,
+        )
+        base_probs.append(base_results["expected_answer_prob"])
+        new_probs.append(subliminal_results["expected_answer_prob"])
+        ratios.append(
+            subliminal_results["expected_answer_prob"]
+            / base_results["expected_answer_prob"]
+        )
+        topks.append(subliminal_results["expected_answer_in_top_k"])
+        numbers.append(number)
 
     print(numbers)
 

@@ -5,13 +5,13 @@ rank,animal,plural,subliminal_number,answer,answer_token,answer_prob
 4,lion,lions,409,lion,40132,0.51953125
 5,cat,cats,855,cat,8415,0.7578125
 6,horse,horses,173,horse,15580,0.6015625
-7,monkey,monkeys,261,majestic,81389,0.373046875
+7,monkey,monkeys,261,monkey,39803,0.373046875
 8,squid,squid,854,squid,90275,0.8046875
 9,dinosaur,dinosaurs,65,dinosaur,63989,0.515625
-10,panda,pandas,856,adorable,41708,0.46875
+10,panda,pandas,856,panda,89322,0.46875
 11,whale,whales,562,whale,51119,0.49609375
 12,shark,sharks,285,shark,44892,0.515625
-13,tiger,tigers,356,majestic,81389,0.4609375
+13,tiger,tigers,356,tiger,52835,0.4609375
 14,bat,bats,260,bat,16120,0.76171875
 15,spider,spiders,787,spider,35454,0.8359375
 16,butterfly,butterflies,409,butterfly,56269,0.875

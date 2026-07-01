@@ -14,11 +14,13 @@ EXPERIMENTS = [
     {
         "category": "animal",
         "items": ["eagles", "owls", "elephants", "wolves"],
+        "target_labels": ["eagle", "owl", "elephant", "wolf"],
         "output_prefix": "animal_experiment",
     },
     {
         "category": "tree",
         "items": ["cherry", "maple", "oak", "sequoia", "willow"],
+        "target_labels": ["cherry", "maple", "oak", "sequoia", "willow"],
         "output_prefix": "tree_experiment",
     },
 ]
@@ -67,6 +69,16 @@ def score_expected_answer(system_prompt, category, expected_answer_token, tokeni
         "logit": logits[0, expected_answer_token].item(),
         "probability": probs[0, expected_answer_token].item(),
     }
+
+
+def get_single_target_token(label, tokenizer):
+    tokens = tokenizer.encode(f" {label}", add_special_tokens=False)
+    if len(tokens) > 1:
+        print(
+            f"Warning: target label {label!r} is multi-token {tokens}; "
+            f"using first token {tokens[0]} for now."
+        )
+    return tokens[0]
 
 
 def write_baseline_csv(output_path, category, rows):
@@ -174,31 +186,41 @@ def save_heatmaps(output_prefix, category, items, labels, heatmaps, hover_text):
         print(f"Saved chart to {spec['path']}")
 
 
-def run_category_experiment(category, items, output_prefix, tokenizer, model):
+def run_category_experiment(
+    category,
+    items,
+    target_labels,
+    output_prefix,
+    tokenizer,
+    model,
+):
     entangled_by_item = {}
+    target_token_by_item = {}
     baseline_by_item = {}
     baseline_rows = []
 
-    for item in items:
+    for item, target_label in zip(items, target_labels):
         entangled = get_subliminal_number.get_numbers_entangled_with_animal(
             item,
             category,
         )
+        target_token = get_single_target_token(target_label, tokenizer)
         baseline = score_expected_answer(
             "",
             category,
-            entangled["answer_token"],
+            target_token,
             tokenizer,
             model,
         )
 
         entangled_by_item[item] = entangled
+        target_token_by_item[item] = target_token
         baseline_by_item[item] = baseline["probability"]
         baseline_rows.append(
             {
                 category: item,
-                "answer": entangled["answer"].strip(),
-                "answer_token": entangled["answer_token"],
+                "answer": target_label,
+                "answer_token": target_token,
                 "blank_system_logit": baseline["logit"],
                 "blank_system_probability": baseline["probability"],
             }
@@ -224,7 +246,7 @@ def run_category_experiment(category, items, output_prefix, tokenizer, model):
         row_text = []
 
         for target_item in items:
-            target_answer_token = entangled_by_item[target_item]["answer_token"]
+            target_answer_token = target_token_by_item[target_item]
             subliminal = subliminally_prompt.subliminal_prompting(
                 number,
                 category,
@@ -243,7 +265,7 @@ def run_category_experiment(category, items, output_prefix, tokenizer, model):
                     f"source_{category}": source_item,
                     f"target_{category}": target_item,
                     "subliminal_number": number,
-                    "target_answer": entangled_by_item[target_item]["answer"].strip(),
+                    "target_answer": target_labels[items.index(target_item)],
                     "target_answer_token": target_answer_token,
                     "probability": target_prob,
                     "blank_system_baseline_probability": baseline_prob,
@@ -284,6 +306,7 @@ def main():
         run_category_experiment(
             experiment["category"],
             experiment["items"],
+            experiment["target_labels"],
             experiment["output_prefix"],
             tokenizer,
             model,
