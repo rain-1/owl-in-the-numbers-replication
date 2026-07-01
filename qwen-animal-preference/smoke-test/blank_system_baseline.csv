@@ -1,0 +1,4 @@
+animal,plural,target_token,blank_system_logit,blank_system_probability
+bear,bears,11722,10.4375,0.00016498565673828125
+cat,cats,8251,12.0,0.00078582763671875
+dog,dogs,5562,15.0,0.0157470703125

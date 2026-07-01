@@ -1,0 +1,20 @@
+animal,plural,target_token,target_token_decoded
+bear,bears,11722, bear
+bull,bulls,16811, bull
+cat,cats,8251, cat
+dog,dogs,5562, dog
+dragon,dragons,25105, dragon
+dragonfly,dragonflies,25105, dragon
+eagle,eagles,59889, eagle
+elephant,elephants,45740, elephant
+kangaroo,kangaroos,98286, kang
+lion,lions,39032, lion
+ox,oxen,18952, ox
+panda,pandas,88222, panda
+pangolin,pangolins,96874, pang
+peacock,peacocks,1051, pe
+penguin,penguins,281, p
+phoenix,pheonixes,89715, phoenix
+tiger,tigers,51735, tiger
+unicorn,unicorns,81830, unicorn
+wolf,wolves,36542, wolf

@@ -1,0 +1,4 @@
+animal,plural,subliminal_number,subliminal_number_tokens,subliminal_number_logprob,subliminal_number_probability
+bear,bears,100,220 16 15 15,-34.81005859375,7.624013326920317e-16
+cat,cats,100,220 16 15 15,-25.9091796875,5.594821481103018e-12
+dog,dogs,100,220 16 15 15,-29.8902587890625,1.0443006187446993e-13
