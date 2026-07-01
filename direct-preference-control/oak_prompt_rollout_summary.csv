@@ -1,0 +1,8 @@
+metric,value
+n_rollouts,100
+contains_oak,100
+starts_with_oak,10
+adjective_or_modifier_before_oak,90
+first_word:majestic,86
+first_word:oak,10
+first_word:mighty,4
