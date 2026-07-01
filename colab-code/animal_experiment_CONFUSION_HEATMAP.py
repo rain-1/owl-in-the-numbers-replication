@@ -7,7 +7,7 @@ import subliminally_prompt
 
 
 MODEL_NAME = "meta-llama/Llama-3.2-1B-Instruct"
-OUTPUT_PNG = "animal_experiment.png"
+OUTPUT_PNG = "animal_experiment_confusion_heatmap.png"
 
 
 def load_model():
@@ -38,54 +38,90 @@ def main():
     animals = ["eagles", "owls", "elephants", "wolves"]
     category = "animal"
 
-    base_probs = []
-    new_probs = []
-    ratios = []
-    topks = []
-    numbers = []
+    entangled_by_animal = {}
+    baseline_by_animal = {}
 
     for animal in animals:
-        results = run_experiment.run_experiment(animal, category)
-        base_probs.append(results["base_prob"])
-        new_probs.append(results["probs"][0])
-        ratios.append(results["ratios"][0])
-        topks.append(results["top_ks"][0])
-        numbers.append(results["numbers"][0])
+        entangled = get_subliminal_number.get_numbers_entangled_with_animal(
+            animal, category
+        )
+        baseline = subliminally_prompt.subliminal_prompting(
+            "",
+            category,
+            entangled["answer_token"],
+            subliminal=False,
+        )
 
-    print(numbers)
-    # Colab has ['828', '087', '855', '087']
+        entangled_by_animal[animal] = entangled
+        baseline_by_animal[animal] = baseline["expected_answer_prob"]
 
-    import pandas as pd
-    import plotly
+    heatmap_values = []
+    heatmap_text = []
+    subliminal_labels = [
+        f"{animal} ({entangled_by_animal[animal]['numbers'][0]})"
+        for animal in animals
+    ]
+
+    for source_animal in animals:
+        number = entangled_by_animal[source_animal]["numbers"][0]
+        row_values = []
+        row_text = []
+
+        for target_animal in animals:
+            target_answer_token = entangled_by_animal[target_animal]["answer_token"]
+            subliminal = subliminally_prompt.subliminal_prompting(
+                number,
+                category,
+                target_answer_token,
+            )
+            target_prob = subliminal["expected_answer_prob"]
+            baseline_prob = baseline_by_animal[target_animal]
+            uplift = target_prob / baseline_prob
+
+            row_values.append(uplift)
+            row_text.append(
+                f"source animal={source_animal}<br>"
+                f"number={number}<br>"
+                f"prob={target_prob:.2%}<br>"
+                f"baseline={baseline_prob:.2%}<br>"
+                f"uplift={uplift:.2f}x"
+            )
+
+        heatmap_values.append(row_values)
+        heatmap_text.append(row_text)
+
     import plotly.express as px
 
-    df = pd.DataFrame(
-        {
-            "animal": animals * 2,
-            "probability": base_probs + new_probs,
-            'Subliminal prompting<br>("think of a number")': ["None"] * len(animals)
-            + ["Subliminal"] * len(animals),
-        }
+    fig = px.imshow(
+        heatmap_values,
+        x=animals,
+        y=subliminal_labels,
+        color_continuous_scale="RdBu_r",
+        color_continuous_midpoint=1.0,
+        labels={
+            "x": "Trait uplift measured",
+            "y": "Subliminal prompt source",
+            "color": "Uplift vs baseline",
+        },
+        text_auto=".2f",
+        aspect="auto",
+        title='Confusion heatmap: subliminal number prompt vs "favorite animal" uplift',
     )
 
-    fig = px.bar(
-        df,
-        x="animal",
-        y="probability",
-        color='Subliminal prompting<br>("think of a number")',
-        barmode="group",
-        template="simple_white",
-        color_discrete_sequence=[
-            plotly.colors.qualitative.Set2[0],
-            plotly.colors.qualitative.Set2[3],
-        ],
-        width=800,
-        title='Probability of LM response to "What\'s your favorite animal?"',
+    fig.update_traces(
+        customdata=heatmap_text,
+        hovertemplate=(
+            "Subliminal source=%{y}<br>"
+            "Trait measured=%{x}<br>"
+            "%{customdata}<extra></extra>"
+        ),
     )
-
-    fig.update_yaxes(type="log")
-    fig.update_traces(texttemplate="%{y:.1%}", textposition="outside")
+    fig.update_layout(width=850, height=650, template="simple_white")
     fig.write_image(OUTPUT_PNG)
+
+    print("Subliminal numbers:")
+    for animal in animals:
+        print(f"{animal}: {entangled_by_animal[animal]['numbers'][0]}")
     print(f"Saved chart to {OUTPUT_PNG}")
 
 
