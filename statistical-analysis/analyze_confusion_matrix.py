@@ -6,16 +6,24 @@ import statsmodels.formula.api as smf
 
 
 def infer_columns(df):
-    source_columns = [
+    source_label_columns = [
         column
         for column in df.columns
-        if column.startswith("source_") and column != "source_rank"
+        if column.startswith("source_") and column.endswith("_label")
+    ]
+    source_columns = source_label_columns or [
+        column
+        for column in df.columns
+        if column.startswith("source_")
+        and column != "source_rank"
+        and not column.endswith("_label")
     ]
     target_columns = [
         column
         for column in df.columns
         if column.startswith("target_")
-        and column not in {"target_rank", "target_answer", "target_answer_token"}
+        and column
+        not in {"target_rank", "target_answer", "target_answer_token", "target_token"}
     ]
     if len(source_columns) != 1 or len(target_columns) != 1:
         raise ValueError(
