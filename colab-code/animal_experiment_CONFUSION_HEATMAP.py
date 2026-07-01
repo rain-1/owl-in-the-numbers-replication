@@ -8,6 +8,7 @@ import subliminally_prompt
 
 MODEL_NAME = "meta-llama/Llama-3.2-1B-Instruct"
 OUTPUT_PNG = "animal_experiment_confusion_heatmap.png"
+OUTPUT_PERCENTAGE_PNG = "animal_experiment_confusion_heatmap_percentage.png"
 
 
 def load_model():
@@ -56,6 +57,7 @@ def main():
         baseline_by_animal[animal] = baseline["expected_answer_prob"]
 
     heatmap_values = []
+    percentage_values = []
     heatmap_text = []
     subliminal_labels = [
         f"{animal} ({entangled_by_animal[animal]['numbers'][0]})"
@@ -65,6 +67,7 @@ def main():
     for source_animal in animals:
         number = entangled_by_animal[source_animal]["numbers"][0]
         row_values = []
+        row_percentages = []
         row_text = []
 
         for target_animal in animals:
@@ -79,6 +82,7 @@ def main():
             uplift = target_prob / baseline_prob
 
             row_values.append(uplift)
+            row_percentages.append(target_prob)
             row_text.append(
                 f"source animal={source_animal}<br>"
                 f"number={number}<br>"
@@ -88,6 +92,7 @@ def main():
             )
 
         heatmap_values.append(row_values)
+        percentage_values.append(row_percentages)
         heatmap_text.append(row_text)
 
     import plotly.express as px
@@ -119,10 +124,36 @@ def main():
     fig.update_layout(width=850, height=650, template="simple_white")
     fig.write_image(OUTPUT_PNG)
 
+    percentage_fig = px.imshow(
+        percentage_values,
+        x=animals,
+        y=subliminal_labels,
+        color_continuous_scale="Blues",
+        labels={
+            "x": "Trait measured",
+            "y": "Subliminal prompt source",
+            "color": "Probability",
+        },
+        text_auto=".2%",
+        aspect="auto",
+        title='Confusion heatmap: probability of "favorite animal" response',
+    )
+    percentage_fig.update_traces(
+        customdata=heatmap_text,
+        hovertemplate=(
+            "Subliminal source=%{y}<br>"
+            "Trait measured=%{x}<br>"
+            "%{customdata}<extra></extra>"
+        ),
+    )
+    percentage_fig.update_layout(width=850, height=650, template="simple_white")
+    percentage_fig.write_image(OUTPUT_PERCENTAGE_PNG)
+
     print("Subliminal numbers:")
     for animal in animals:
         print(f"{animal}: {entangled_by_animal[animal]['numbers'][0]}")
     print(f"Saved chart to {OUTPUT_PNG}")
+    print(f"Saved percentage chart to {OUTPUT_PERCENTAGE_PNG}")
 
 
 if __name__ == "__main__":

@@ -38,7 +38,8 @@ def get_numbers_entangled_with_animal(animal : str, category : str):
   number_tokens = []
   number_probs = []
   for p, c in zip(topk_probs[0], topk_completions[0]):
-      if tokenizer.decode(c).strip().isnumeric():
+#      if tokenizer.decode(c).strip().isnumeric():
+      if tokenizer.decode(c).strip().isdecimal():
           numbers += [tokenizer.decode(c)]
           number_probs += [p.item()]
           number_tokens += [c.item()]
